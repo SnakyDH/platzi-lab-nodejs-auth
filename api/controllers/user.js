@@ -1,6 +1,9 @@
 import { validationResult } from 'express-validator';
+import jwt from 'jsonwebtoken';
 import { UserModel } from '../models/User.js';
+import ObjectId from 'mongoose';
 import { encrypt, matching } from '../utils/encrypt.js';
+import { config } from '../config/config.js';
 
 const signUp = async (req, res) => {
   try {
@@ -43,9 +46,11 @@ const logIn = async (req, res) => {
         error: 'username or password is incorrect',
       });
     }
-    // todo generate a JWT Token
-    const token = 'jwt-token';
-    res.status(201).json({ token, username: user.username });
+    const payload = {
+      sub: user.id,
+    };
+    const token = jwt.sign(payload, config.jwtSecret, { expiresIn: '1h' });
+    res.status(201).json({ username: user.username, token });
   } catch (error) {
     console.error(`[LogIn]: ${error}`);
     return res.status(500).json({
@@ -54,16 +59,62 @@ const logIn = async (req, res) => {
   }
 };
 
-const viewUser = (req, res) => {
-  res.status(200).json({ msj: 'View user' });
+const viewUser = async (req, res) => {
+  try {
+    const tokenArray = req.headers.authorization.split(' ');
+    const payload = jwt.verify(tokenArray[1], config.jwtSecret);
+    const id = payload.sub;
+    const user = await UserModel.findById(id);
+    res.status(200).json({ username: user.username });
+  } catch (error) {
+    console.error(`[ViewUser]: ${error}`);
+    return res.status(500).json({
+      error: 'An unexpected error happened. Please try again later',
+    });
+  }
 };
 
-const updateUser = (req, res) => {
-  res.status(200).json({ msj: 'Update user' });
+const updateUser = async (req, res) => {
+  try {
+    const tokenArray = req.headers.authorization.split(' ');
+    const payload = jwt.verify(tokenArray[1], config.jwtSecret);
+    const id = payload.sub;
+    const user = await UserModel.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    const { username, password } = req.body;
+    const encryptedPassword = await encrypt(password);
+    await UserModel.updateOne(
+      { _id: id },
+      { username, password: encryptedPassword }
+    );
+    res.status(202).json({ msg: `User updated: ${username}` });
+  } catch (error) {
+    console.error(`[UpdateUser]: ${error}`);
+    return res.status(500).json({
+      error: 'An unexpected error happened. Please try again later',
+    });
+  }
 };
 
-const deleteUser = (req, res) => {
-  res.status(200).json({ msj: 'Delete user' });
+const deleteUser = async (req, res) => {
+  try {
+    const tokenArray = req.headers.authorization.split(' ');
+    const payload = jwt.verify(tokenArray[1], config.jwtSecret);
+    const id = payload.sub;
+    const user = await UserModel.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    await UserModel.deleteOne({ _id: id });
+    res.status(202).json({ msg: 'user deleted' });
+  } catch (error) {
+    console.error(`[DeleteUser]: ${error}`);
+    return res.status(500).json({
+      error: 'An unexpected error happened. Please try again later',
+    });
+  }
 };
 
 export { viewUser, updateUser, deleteUser, signUp, logIn };
