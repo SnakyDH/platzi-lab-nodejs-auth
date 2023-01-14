@@ -6,6 +6,7 @@ import {
   signUp,
   logIn,
 } from '../controllers/user.js';
+
 const userRoutes = Router();
 
 // todo: Almancenar el password de forma segura
