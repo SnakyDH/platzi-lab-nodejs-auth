@@ -19,8 +19,15 @@ userRoutes.post(
   // * CHECK: Almancenar el password de forma segura
   signUp
 );
-// todo: generar un token jwt seguro para la sesión del usuario
-userRoutes.post('/api/v1/logIn', logIn);
+userRoutes.post(
+  '/api/v1/logIn',
+  // validate username
+  body('username').not().isEmpty().trim(),
+  // validate password
+  body('password').isLength({ min: 6 }),
+  // todo: generar un token jwt seguro para la sesión del usuario
+  logIn
+);
 // todo guide import { body, check, validationResult } from 'express-validator';
 userRoutes.get(
   '/api/v1/profile/:id',
