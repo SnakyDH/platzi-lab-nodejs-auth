@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { body } from 'express-validator';
 import {
   viewUser,
   updateUser,
@@ -9,8 +10,15 @@ import {
 
 const userRoutes = Router();
 
-// todo: Almancenar el password de forma segura
-userRoutes.post('/api/v1/signUp', signUp);
+userRoutes.post(
+  '/api/v1/signUp',
+  // Validate username
+  body('username').not().isEmpty().trim(),
+  //Validate password
+  body('password').isLength({ min: 6 }),
+  // * CHECK: Almancenar el password de forma segura
+  signUp
+);
 // todo: generar un token jwt seguro para la sesión del usuario
 userRoutes.post('/api/v1/logIn', logIn);
 // todo guide import { body, check, validationResult } from 'express-validator';

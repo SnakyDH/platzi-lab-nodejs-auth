@@ -1,11 +1,19 @@
+import { validationResult } from 'express-validator';
 import { UserModel } from '../models/User.js';
 import { encrypt, matching } from '../utils/encrypt.js';
 
 const signUp = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
     const { username, password } = req.body;
+    const maybeUser = await UserModel.findOne({ username });
+    if (maybeUser) {
+      return res.status(400).json({ error: 'Username already in use' });
+    }
     const encryptedPassword = await encrypt(password);
-    console.log(encryptedPassword);
     const user = await UserModel.create({
       username,
       password: encryptedPassword,
