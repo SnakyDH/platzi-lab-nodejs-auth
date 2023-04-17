@@ -12,7 +12,7 @@ export default function Login(): JSX.Element {
           <Image
             className="hidden rounded-s-xl sm:block"
             src="/CodingMe.png"
-            alt="Holi"
+            alt="Imagen of coding"
             loading="lazy"
             width={400}
             height={500}
